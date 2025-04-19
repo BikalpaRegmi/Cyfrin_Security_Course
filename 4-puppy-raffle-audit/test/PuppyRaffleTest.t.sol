@@ -257,14 +257,14 @@ assert(gasUsedSecond>gasUsedFirst) ;
         address attackUser = makeAddr("AtackUser");
         vm.deal(attackUser , 1 ether);
 
-        console.log("Attacker Contract Balance Before attacking ", address(attackerContract).balance);
-        console.log("Victim contract Balance before attacking ", address(puppyRaffle).balance);
+        console.log("Attacker Contract Balance Before attacking :", address(attackerContract).balance);
+        console.log("Victim contract Balance before attacking :", address(puppyRaffle).balance);
 
         vm.prank(attackUser);
         attackerContract.attack{value:entranceFee}();
 
-        console.log("Attacker Contract Balance after attacking ", address(attackerContract).balance);
-        console.log("Victim contract Balance after attacking ", address(puppyRaffle).balance);
+        console.log("Attacker Contract Balance after attacking :", address(attackerContract).balance);
+        console.log("Victim contract Balance after attacking : ", address(puppyRaffle).balance);
 
     }
 }
