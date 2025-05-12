@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {Test, console} from "forge-std/Test.sol";
 import {PuppyRaffle} from "../src/PuppyRaffle.sol";
+import {Vm} from "lib/forge-std/src/Vm.sol";
 
 contract PuppyRaffleTest is Test {
     PuppyRaffle puppyRaffle;

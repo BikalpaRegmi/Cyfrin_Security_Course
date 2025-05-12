@@ -1,3 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    .full-page {
+        width:  100%;
+        height:  100vh; /* This will make the div take up the full viewport height */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .full-page img {
+        max-width:  200;
+        max-height:  200;
+        margin-bottom: 5rem;
+    }
+    .full-page div{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+</head>
+<body>
+
+<div class="full-page">
+    <img src="./Logo.svg" alt="Logo">
+    <div>
+    <h1>PuppyRaffle Audit Report</h1>
+    <h3>Prepared by: Bikalpa Regmi</h3>
+    </div>
+</div>
+
+</body>
+</html>
+
+<!-- Your report starts here! -->
+
+# Table of Contents
+- [Table of Contents](#table-of-contents)
+- [Protocol Summary](#protocol-summary)
+- [Disclaimer](#disclaimer)
+- [Risk Classification](#risk-classification)
+- [Audit Details](#audit-details)
+  - [Scope](#scope)
+  - [Roles](#roles)
+- [Executive Summary](#executive-summary)
+  - [Issues found](#issues-found)
+- [Findings](#findings)
+  - [High](#high)
+    - [\[H-1\] Changing the player balance after calling transfer function may lead to re entrancy attacks in `PuppyRaffle::refund`.](#h-1-changing-the-player-balance-after-calling-transfer-function-may-lead-to-re-entrancy-attacks-in-puppyrafflerefund)
+    - [Description :](#description-)
+    - [Impact :](#impact-)
+    - [Proof Of Concept](#proof-of-concept)
+    - [\[H-2\] Weak Randomness in `PuppyRaffle::selectWinner` allows user  to influence or predict the winner \& winning puppy.](#h-2-weak-randomness-in-puppyraffleselectwinner-allows-user--to-influence-or-predict-the-winner--winning-puppy)
+    - [\[H-3\] Integer overflow of `PuppyRaffle::totalFees` losses fees.](#h-3-integer-overflow-of-puppyraffletotalfees-losses-fees)
+  - [Medium](#medium)
+    - [\[M-1\] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential DoS vector, incrementing gas costs for future entrants](#m-1-looping-through-players-array-to-check-for-duplicates-in-puppyraffleenterraffle-is-a-potential-dos-vector-incrementing-gas-costs-for-future-entrants)
+    - [Description:](#description)
+    - [Impact:](#impact)
+    - [Proof of Concept:](#proof-of-concept-1)
+    - [\[M-2\] `PuppyRaffle::getActivePlayerIndex` returns 0 for non existing player as well as player with zero index.](#m-2-puppyrafflegetactiveplayerindex-returns-0-for-non-existing-player-as-well-as-player-with-zero-index)
+  - [Low](#low)
+    - [\[L-1\] Winner wouldnt receive their winning amount if their fallback is messed up in smart contract wallet](#l-1-winner-wouldnt-receive-their-winning-amount-if-their-fallback-is-messed-up-in-smart-contract-wallet)
+  - [Gas](#gas)
+    - [\[G-1\] Unchanged State Variable Should Be Declared Constant or Immutable](#g-1-unchanged-state-variable-should-be-declared-constant-or-immutable)
+    - [\[G-2\] Storage variable in a loop should be cached](#g-2-storage-variable-in-a-loop-should-be-cached)
+    - [\[G-3\] `PuppyRaffle::_isActivePlayer` is never used and should be removed](#g-3-puppyraffle_isactiveplayer-is-never-used-and-should-be-removed)
+  - [Information](#information)
+    - [\[I-1\] Solidity pragma should be specific not wide](#i-1-solidity-pragma-should-be-specific-not-wide)
+    - [\[I-2\] Using an outdated version of solidity is not reccommended](#i-2-using-an-outdated-version-of-solidity-is-not-reccommended)
+    - [\[I-3\] Missing checks for `address(0)` when assigning value to address state variable.](#i-3-missing-checks-for-address0-when-assigning-value-to-address-state-variable)
+    - [\[I-4\] Recommended to follow CEI on `PuppyRaffle::selectWinner`.](#i-4-recommended-to-follow-cei-on-puppyraffleselectwinner)
+    - [\[I-5\] State changes are missing events](#i-5-state-changes-are-missing-events)
+
+# Protocol Summary
+
+This project is to enter a raffle to win a cute dog NFT. The protocol should do the following:
+
+1. Call the enterRaffle function with the following parameters:
+    i. address[] participants: A list of addresses that enter. You can use this to enter yourself multiple times, or yourself and a group of your friends.
+2. Duplicate addresses are not allowed
+3. Users are allowed to get a refund of their ticket & value if they call the refund function
+4. Every X seconds, the raffle will be able to draw a winner and be minted a random puppy
+5. The owner of the protocol will set a feeAddress to take a cut of the value, and the rest of the funds will be sent to the winner of the puppy.
+   
+# Disclaimer
+
+The Bikalpa teams makes all effort to find as many vulnerabilities in the code in the given time period, but holds no responsibilities for the findings provided in this document. A security audit by the team is not an endorsement of the underlying business or product. The audit was time-boxed and the review of the code was solely on the security aspects of the Solidity implementation of the contracts.
+
+# Risk Classification
+
+|            |        | Impact |        |     |
+| ---------- | ------ | ------ | ------ | --- |
+|            |        | High   | Medium | Low |
+|            | High   | H      | H/M    | M   |
+| Likelihood | Medium | H/M    | M      | M/L |
+|            | Low    | M      | M/L    | L   |
+
+We use the [CodeHawks](https://docs.codehawks.com/hawks-auditors/how-to-evaluate-a-finding-severity) severity matrix to determine severity. See the documentation for more details.
+
+# Audit Details 
+
+Commit Hash: 2a47715b30cf11ca82db148704e67652ad679cd8
+
+## Scope 
+
+In Scope:
+./src/
+#-- PuppyRaffle.sol
+
+## Roles
+
+OwnOwner - Deployer of the protocol, has the power to change the wallet address to which fees are sent through the changeFeeAddress function.
+
+Player - Participant of the raffle, has the power to enter the raffle with the enterRaffle function and refund value through refund function.er
+
+# Executive Summary
+
+We spent 12 hr auditing this using foundry test tool. 
+
+## Issues found
+
+| Severity | Number of issues found |
+| -------- | ---------------------- |
+| High     | 3                      |
+| Medium   | 2                      |
+| Low      | 1                      |
+| Info     | 8                      |
+| Total    | 14                     |
+
+# Findings
+
+## High
+
 ### [H-1] Changing the player balance after calling transfer function may lead to re entrancy attacks in `PuppyRaffle::refund`.
 
 ### Description : 
@@ -210,16 +347,31 @@ myVar=myVar+1 ;
 
 ```javascript
  totalFees = totalFees+uint64(fee);
- 
+
+ totalFees = totalFees+1;
+
+ //The result will be 0
 ```
 
 </details>
 
-**Recommended Mitigation:** 
- 
+**Recommended Mitigation:** There are few possible mitigation-:
+1. Use a new version of solidity `0.8.0` over old ones.
+2. Use `uint256` instead of `uint64` in `puppyRaffle::totalFees`.
+3. Use `SafeMath` library from openzeppelin. However you would have hard time with `uint64` type if too many fees are collected.
+4. Remove the balance check from `PuppyRaffle::withdrawFees`.
+
+``` diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+
+There are more attack vectors with above require statement such as `selfdestruct`,`DOS`,etc. Recommended to remove that regardless.
+
 ------
 -----
 ----
+
+## Medium
 
 ### [M-1] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential DoS vector, incrementing gas costs for future entrants
 
@@ -372,7 +524,28 @@ You can also use boolean value to check if the person has entered or not.
 ---
 ---
 
-# Gas
+## Low
+
+### [L-1] Winner wouldnt receive their winning amount if their fallback is messed up in smart contract wallet
+
+**Description:** The `PuppyRaffle::selectWinner` is responsible for resetting the lottery. However, if the winner is a smart contract wallet that rejects payments, the lottery would not be able to restart.
+
+User could easily call `selectWinner` again and non-wallet entrant could enter, but it could cost a lot due to duplicate check & a lottery reset could get very challenging.
+
+**Impact:** The `PuppyRaffle::selectWinner` function could revert many times, making it difficult to receive the money. Also, The true winner couldn't receive the money & someone else will take their money.
+
+**Proof of Concept:** 
+1. 10 smart contract wallet enters the lottery without fallback or receive function.
+2. The lottery ends.
+3. The `SelectWinner` function wouldn't work even if the lottery is over.
+
+**Recommended Mitigation:** Create a mapping of address=>payouts so that the winner could claim the reward themselves with a new `claimPrice`, putting the owness to the winner instead for contract. [Pull over push method]
+
+---
+---
+---
+
+## Gas
 
 ### [G-1] Unchanged State Variable Should Be Declared Constant or Immutable
 
@@ -394,9 +567,14 @@ Instance :
         }
 ```
 
+### [G-3] `PuppyRaffle::_isActivePlayer` is never used and should be removed
+
+
 --- 
 ---
 ---
+
+## Information
 
 ### [I-1] Solidity pragma should be specific not wide
 
@@ -432,6 +610,7 @@ It is always best to keep your code clean using CEI to prevent Re-Entrancy Attac
 +      require(success, "PuppyRaffle: Failed to send prize pool to winner");
 ```
 
+### [I-5] State changes are missing events
 
 ---
 ----

@@ -122,7 +122,7 @@ contract PuppyRaffle is ERC721, Ownable {
                 return i;
             }
         }
-        //@audit if the active player index is 0 it will return 0. The player might get confused.
+        //report-written if the active player index is 0 it will return 0. The player might get confused.
         return 0;
     }
 
@@ -144,8 +144,8 @@ contract PuppyRaffle is ERC721, Ownable {
         uint256 prizePool = (totalAmountCollected * 80) / 100;
         uint256 fee = (totalAmountCollected * 20) / 100;
 
-        //@audit Overflow
-        //@audit unsafe cast
+        //report-written Overflow
+        //report-written unsafe cast
         totalFees = totalFees + uint64(fee);
 
         uint256 tokenId = totalSupply();
@@ -165,7 +165,7 @@ contract PuppyRaffle is ERC721, Ownable {
         raffleStartTime = block.timestamp;
         previousWinner = winner;
 
-       
+       //report-written the winner would not receive the amount if their fallback function is messed up
         (bool success,) = winner.call{value: prizePool}("");
         require(success, "PuppyRaffle: Failed to send prize pool to winner");
         _safeMint(winner, tokenId);
@@ -173,7 +173,7 @@ contract PuppyRaffle is ERC721, Ownable {
 
     /// @notice this function will withdraw the fees to the feeAddress
     function withdrawFees() external {
-        //@audit Threat of selfdestruct
+        //report-written Threat of selfdestruct
         require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
         uint256 feesToWithdraw = totalFees;
         totalFees = 0;
@@ -190,7 +190,7 @@ contract PuppyRaffle is ERC721, Ownable {
     }
 
     /// @notice this function will return true if the msg.sender is an active player
-    //@audit is this even used anywhere ?
+    //report-written is this even used anywhere ?
     function _isActivePlayer() internal view returns (bool) {
         for (uint256 i = 0; i < players.length; i++) {
             if (players[i] == msg.sender) {
