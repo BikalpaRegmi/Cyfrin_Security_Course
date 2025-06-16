@@ -81,7 +81,7 @@ contract ThunderLoanUpgraded is Initializable, OwnableUpgradeable, UUPSUpgradeab
     error ThunderLoan__NotEnoughTokenBalance(uint256 startingBalance, uint256 amount);
     error ThunderLoan__CallerIsNotContract();
     error ThunderLoan__AlreadyAllowed();
-    error ThunderLoan__ExhangeRateCanOnlyIncrease(); //@audit is this even used anywhere ?
+    error ThunderLoan__ExhangeRateCanOnlyIncrease(); 
     error ThunderLoan__NotCurrentlyFlashLoaning();
     error ThunderLoan__BadNewFee();
 
@@ -227,7 +227,7 @@ contract ThunderLoanUpgraded is Initializable, OwnableUpgradeable, UUPSUpgradeab
         s_currentlyFlashLoaning[token] = false;
     }
 
-    function repay(IERC20 token, uint256 amount) public {  //@audit-gas make it external
+    function repay(IERC20 token, uint256 amount) public {  
         if (!s_currentlyFlashLoaning[token]) {
             revert ThunderLoan__NotCurrentlyFlashLoaning();
         }
@@ -266,18 +266,17 @@ contract ThunderLoanUpgraded is Initializable, OwnableUpgradeable, UUPSUpgradeab
             revert ThunderLoan__BadNewFee();
         }
         s_flashLoanFee = newFee;
-        //@audit-low missing event
     }
 
     function isAllowedToken(IERC20 token) public view returns (bool) {
         return address(s_tokenToAssetToken[token]) != address(0);
     }
 
-    function getAssetFromToken(IERC20 token) public view returns (AssetToken) { //@audit-gas make it external
+    function getAssetFromToken(IERC20 token) public view returns (AssetToken) { 
         return s_tokenToAssetToken[token];
     }
 
-    function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) { //@audit-gas make it external
+    function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) { 
         return s_currentlyFlashLoaning[token];
     }
 

@@ -81,7 +81,7 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
     error ThunderLoan__NotEnoughTokenBalance(uint256 startingBalance, uint256 amount);
     error ThunderLoan__CallerIsNotContract();
     error ThunderLoan__AlreadyAllowed();
-    error ThunderLoan__ExhangeRateCanOnlyIncrease(); //@audit is this even used anywhere ?
+    error ThunderLoan__ExhangeRateCanOnlyIncrease(); //report-written  this even used anywhere ?
     error ThunderLoan__NotCurrentlyFlashLoaning();
     error ThunderLoan__BadNewFee();
 
@@ -95,7 +95,7 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
 
     // The fee in WEI, it should have 18 decimals. Each flash loan takes a flat fee of the token price.
 
-    //@audit-info this should be immutable or constant
+    //report-written this should be immutable or constant
     uint256 private s_feePrecision;
     uint256 private s_flashLoanFee; // 0.3% ETH fee
 
@@ -140,8 +140,8 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    // @audit-info plz change the name to poolFactory.
-    // @audit-low initializers can be front runed
+    // report-written plz change the name to poolFactory.
+    // report-written initializers can be front runed
     
     function initialize(address tswapAddress) external initializer {
         __Ownable_init(msg.sender);
@@ -151,7 +151,7 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
         s_flashLoanFee = 3e15; // 0.3% ETH fee
     }
 
-//@audit-info where is the natspec ???
+//report-written where is the natspec ???
     function deposit(IERC20 token, uint256 amount) external revertIfZero(amount) revertIfNotAllowedToken(token) {
         AssetToken assetToken = s_tokenToAssetToken[token];
         uint256 exchangeRate = assetToken.getExchangeRate();
@@ -159,7 +159,7 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
         emit Deposit(msg.sender, token, amount);
         assetToken.mint(msg.sender, mintAmount);
 
-//@audit-high we shouldn't be updating the exchange rate here.
+//report-written we shouldn't be updating the exchange rate here.
         uint256 calculatedFee = getCalculatedFee(token, amount);
         assetToken.updateExchangeRate(calculatedFee);
 
@@ -242,13 +242,14 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
         s_currentlyFlashLoaning[token] = false;
     }
 
-//@audit-low can't use repay to repay a flashloan inside another flashloan.
-    function repay(IERC20 token, uint256 amount) public { //@audit-gas make it external
+//report-written can't use repay to repay a flashloan inside another flashloan.
+    function repay(IERC20 token, uint256 amount) public { //report-written make it external
         if (!s_currentlyFlashLoaning[token]) {
             revert ThunderLoan__NotCurrentlyFlashLoaning();
         }
         AssetToken assetToken = s_tokenToAssetToken[token];
-        //@audit-medium no address checks of msg.sender
+        //report-written no address checks of msg.sender
+    
         token.safeTransferFrom(msg.sender, address(assetToken), amount);
     }
 
@@ -274,8 +275,8 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
     function getCalculatedFee(IERC20 token, uint256 amount) public view returns (uint256 fee) {
         //slither-disable-next-line divide-before-multiply
 
-        //@audit-high If the fee is charged in the token, then the fee amount should reflect the value of the token, not its price in ETH.
-        uint256 valueOfBorrowedToken = (amount * getPriceInWeth(address(token))) / s_feePrecision;
+        //report-written If the fee is charged in the token, then the fee amount should reflect the value of the token, not its price in ETH.
+        uint256 valueOfBorrowedToken = (amount * getPriceInWeth(address(token))) / s_feePrecision; 
         //slither-disable-next-line divide-before-multiply
         fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
     }
@@ -285,18 +286,18 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
             revert ThunderLoan__BadNewFee();
         }
         s_flashLoanFee = newFee;
-        //@audit-low missing event and emit 
+        //report-written missing event and emit 
     }
 
     function isAllowedToken(IERC20 token) public view returns (bool) {
         return address(s_tokenToAssetToken[token]) != address(0);
     }
 
-    function getAssetFromToken(IERC20 token) public view returns (AssetToken) {  //@audit-gas make it external
+    function getAssetFromToken(IERC20 token) public view returns (AssetToken) {  //report-written audit-gas make it external
         return s_tokenToAssetToken[token];
     }
 
-    function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) {  //@audit-gas make it external
+    function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) {  //report-written make it external
         return s_currentlyFlashLoaning[token];
     }
 

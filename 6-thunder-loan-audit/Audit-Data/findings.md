@@ -194,6 +194,62 @@ Paste the above code in `ThunderLoanTest.t.sol`.
 +    uint256 public constant FEE_PRECISION = 1e18 ;
 ```
 
+### [H-4] fee are less for non standard ERC20 Token
+
+## Summary
+Within the functions ```ThunderLoan::getCalculatedFee()``` and ```ThunderLoanUpgraded::getCalculatedFee()```, an issue arises with the calculated fee value when dealing with non-standard ERC20 tokens. Specifically, the calculated value for non-standard tokens appears significantly lower compared to that of standard ERC20 tokens.
+## Vulnerability Details
+
+//ThunderLoan.sol
+
+```solidity
+ function getCalculatedFee(IERC20 token, uint256 amount) public view returns (uint256 fee) {
+        //slither-disable-next-line divide-before-multiply
+@>        uint256 valueOfBorrowedToken = (amount * getPriceInWeth(address(token))) / s_feePrecision;
+@>        //slither-disable-next-line divide-before-multiply
+        fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
+    }
+```
+
+```solidity
+//ThunderLoanUpgraded.sol
+
+ function getCalculatedFee(IERC20 token, uint256 amount) public view returns (uint256 fee) {
+        //slither-disable-next-line divide-before-multiply
+@>        uint256 valueOfBorrowedToken = (amount * getPriceInWeth(address(token))) / FEE_PRECISION;
+        //slither-disable-next-line divide-before-multiply
+@>        fee = (valueOfBorrowedToken * s_flashLoanFee) / FEE_PRECISION;
+    }
+```
+
+## Impact
+Let's say:
+- user_1 asks a flashloan for 1 ETH.
+- user_2 asks a flashloan for 2000 USDT.
+
+```solidity
+function getCalculatedFee(IERC20 token, uint256 amount) public view returns (uint256 fee) {
+        
+        //1 ETH = 1e18 WEI
+        //2000 USDT = 2 * 1e9 WEI
+
+        uint256 valueOfBorrowedToken = (amount * getPriceInWeth(address(token))) / s_feePrecision;
+
+        // valueOfBorrowedToken ETH = 1e18 * 1e18 / 1e18 WEI
+        // valueOfBorrowedToken USDT= 2 * 1e9 * 1e18 / 1e18 WEI
+
+        fee = (valueOfBorrowedToken * s_flashLoanFee) / s_feePrecision;
+
+        //fee ETH = 1e18 * 3e15 / 1e18 = 3e15 WEI = 0,003 ETH
+        //fee USDT: 2 * 1e9 * 3e15 / 1e18 = 6e6 WEI = 0,000000000006 ETH
+    }
+```
+The fee for the user_2 are much lower then user_1 despite they asks a flashloan for the same value (hypotesis 1 ETH = 2000 USDT). 
+
+
+## Recommendations
+Adjust the precision accordinly with the allowed tokens considering that the non standard ERC20 haven't 18 decimals.
+
 ## Medium
 
 ### [M-1] Using TSwap as a price oracle leads to price and oracle manipulation attacks.
@@ -328,3 +384,169 @@ return true ;
 
 **Recommended Mitigation :** Consider using a different price oracle mechanism, like a Chainlink price feed with a Uniswap TWAP fallback oracle.
 
+### [M-2] No address check of msg.sender at `ThunderLoan::repay`.
+
+**Description :** The `repay` function inside `ThunderLoan` doesnot contain any sort of check for msg.sender hence resulting in anyone to repay any others flashloan instead of paying flashloan by the one who called it. 
+
+**Impact :** Any one can repay the flashloan of a person.
+
+
+**Recommended Mitigation :** Create a mapping that stores user address after taking a token.
+
+<details>
+
+```diff
+ function repay(IERC20 token, uint256 amount) public { //report-written make it external
+        if (!s_currentlyFlashLoaning[token]) {
+            revert ThunderLoan__NotCurrentlyFlashLoaning();
+        }
+        AssetToken assetToken = s_tokenToAssetToken[token];
+
++         if (msg.sender != s_currentReceiver[token]) {
++        revert ThunderLoan__InvalidRepayer(); 
++    }
+
+        token.safeTransferFrom(msg.sender, address(assetToken), amount);
+    }
+```
+</details>
+
+## Low
+
+### [L-1] The address of parameter in calling repay function at `IThunderLoan` is wrong.
+
+**Description :** The `IThunderLoan` interface is calling repay function. However, in `IThunderLoan` function is calling address and in `ThunderLoan` contract the function is calling IERC20 address.
+
+**Impact :** Using address in the interface suggests any address can be passed — even non-token addresses — which might not be safe.
+
+**Proof of Concept :**
+1. Malicious or incorrect contract calls `repay` function with a non token address.
+2. It will cause revert at runtime.
+
+**Recommended Mitigation :** Correct the calling in `IThunderLoan`.
+
+```diff
++    function repay(IERC20 token, uint256 amount) external;
+-    function repay(address token, uint256 amount) external;
+```
+
+### [L-2] The `ThunderLoan::initialize` could be front runned.
+
+**Description :** The `ThunderLoan::initialize` is not protected by any onlyOwner modifier. 
+
+**Impact :** `ThunderLoan::initialize` can be front run after deploying `ThunderLoan` contract by mev bots. The attacker then will have all of the power of this contract. He can add his malicious `TswapAddress`.
+
+**Recommended Mitigation :**
+
+```diff
+function initialize(address tswapAddress) external initializer {
++   require(msg.sender==trustedInitializer , "No trusted deployer") ;
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+        __Oracle_init(tswapAddress);
+        s_feePrecision = 1e18;
+        s_flashLoanFee = 3e15; // 0.3% ETH fee
+    }
+```
+
+### [L-3] The `ThunderLoan::updateFlashLoanFee` is missing event and emit.
+
+**Description :** The updateFlashLoanFee function updates a critical state variable s_flashLoanFee, but does not emit an event upon change. This limits visibility for off-chain services that rely on events to stay in sync with contract state.
+
+**Impact :** 
+Off-chain indexers, dashboards, or backend services may fail to detect changes in the flash loan fee.
+
+Users or integrators might operate on outdated fee data, leading to confusion or incorrect UX behavior.
+
+**Proof of Concept :**
+a) updateFlashLoanFee(5000) is called.
+
+b) The change is applied on-chain, but no event is emitted.
+
+c) Off-chain systems don't detect the change → frontend still displays old fee (e.g., 3000).
+
+d) Users are surprised to see different fees being charged than expected.
+
+**Recommended Mitigation :**Declare and emit an event when the flash loan fee is updated.
+```diff
+function updateFlashLoanFee(uint256 newFee) external onlyOwner {
+        if (newFee > s_feePrecision) {
+            revert ThunderLoan__BadNewFee();
+        }
+        s_flashLoanFee = newFee;
++       emit(newFee , block.timestamp) ;
+    }
+```
+
+## Gas
+
+### [G-1] To many of same storage reads in `AssetToken::updateExchangeRate`. This will  consume a lot of gas. It is better to store those storage variable inside a memory.
+
+```diff
+  function updateExchangeRate(uint256 fee) external onlyThunderLoan {
++        uint256 exchangeRate = s_exchangeRate ;
+
+        uint256 newExchangeRate = exchangeRate * (totalSupply() + fee) / totalSupply();
+
+        if (newExchangeRate <= exchangeRate) {
+            revert AssetToken__ExhangeRateCanOnlyIncrease(exchangeRate, newExchangeRate);
+        }
+        exchangeRate = newExchangeRate;
+        emit ExchangeRateUpdated(exchangeRate);
+    }
+
+```
+
+### [G-2] The `ThunderLoan::ThunderLoan__ExhangeRateCanOnlyIncrease` is not used anywhere.
+
+```diff
+-    error ThunderLoan__ExhangeRateCanOnlyIncrease(); 
+```
+
+### [G-3] The `ThunderLoan::repay` function is nowhere used inside that contract, hence it should be marked external instead of public.
+
+```diff
+-    function repay(IERC20 token, uint256 amount) public { 
++    function repay(IERC20 token, uint256 amount) external { 
+```
+
+### [G-4] The The `ThunderLoan::getAssetFromToken` and `ThunderLoan::isCurrentlyFlashLoaning` function is nowhere used inside that contract, hence it should be marked external instead of public.
+
+```diff
+-     function getAssetFromToken(IERC20 token) public view returns (AssetToken) {
++     function getAssetFromToken(IERC20 token) external view returns (AssetToken) {
+-     function isCurrentlyFlashLoaning(IERC20 token) public view returns (bool) {
++     function isCurrentlyFlashLoaning(IERC20 token) external view returns (bool) {
+```
+
+
+## Informational
+
+### [I-1] The `IThunderLoan` inside `IFlashLoanReceiver` is not used. No need to import it.
+
+```diff
+- import { IThunderLoan } from "./IThunderLoan.sol";
+```
+
+### [I-2] The `Ithunderloan` contract should be implemented by thunderloan contract in.
+
+### [I-3] No zero address check on `OracleUpgradeable::__Oracle_init_unchained`.
+
+```diff
+ function __Oracle_init_unchained(address poolFactoryAddress) internal onlyInitializing {
++       require(poolFactoryAddress != address(0)) ;
+        s_poolFactory = poolFactoryAddress;
+    }
+```
+
+### [I-4] The `s_feePrecision` state variable is remained same throught the code. Hence, it should be marked as immutable
+
+```diff
+-    uint256 private s_feePrecision;
+```
+
+### [I-5] The `ThunderLoan::initialize` has `tswapAddress` in its parameters but in `OracleUpgradeable::__Oracle_init` has `poolFactoryAddress` in its parameters. This will result in incorrect initialization.
+
+### [I-6] The `ThunderLoan::deposit` is a crucial function yet does not have any natspecs. It is good practice to have natspec on every function even if it is not that crucial.
+
+### [I-7]  The `ThunderLoan::repay` function does not allow nested flash loan. 

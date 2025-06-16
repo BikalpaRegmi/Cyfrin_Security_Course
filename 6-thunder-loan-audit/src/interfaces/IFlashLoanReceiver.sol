@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.20;
 
-//@audit this is not used 
+//report-written this is not used 
 //This is bad practice to edit live code for mock tests, We must remove the 'MockFlashLoan'
 import { IThunderLoan } from "./IThunderLoan.sol";
 
