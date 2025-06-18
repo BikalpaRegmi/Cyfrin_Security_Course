@@ -1,0 +1,5 @@
+q1. What is updating pricing parameters ?
+--- oracle configs & formulas to calculate vault/share value and performance, updated by DAO for fairness and security.
+
+q2. Shared vault or individual vault ?
+--- User choose a guardian and deposit it into a guardian vault. Hence, individual vault for each guardian.
