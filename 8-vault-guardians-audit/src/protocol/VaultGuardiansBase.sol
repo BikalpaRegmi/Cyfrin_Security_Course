@@ -27,11 +27,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {VaultShares} from "./VaultShares.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IVaultShares, IVaultData} from "../interfaces/IVaultShares.sol";
-import {AStaticTokenData, IERC20} from "../abstract/AStaticTokenData.sol";
-import {VaultGuardianToken} from "../dao/VaultGuardianToken.sol";
+import {VaultShares} from "./VaultShares.sol"; //e includes all those deposit,withdraw and redeem functions
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; 
+import {IVaultShares, IVaultData} from "../interfaces/IVaultShares.sol"; //e interface of that vault shares and struct holding allocations
+import {AStaticTokenData, IERC20} from "../abstract/AStaticTokenData.sol"; //e deploys weth , link and weth
+import {VaultGuardianToken} from "../dao/VaultGuardianToken.sol"; //e erc20 vgt token 
 
 /*
  * @title VaultGuardiansBase
@@ -58,18 +58,20 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
-    address private immutable i_aavePool;
-    address private immutable i_uniswapV2Router;
-    VaultGuardianToken private immutable i_vgToken;
+    address private immutable i_aavePool; //e aave pool contract address
+    address private immutable i_uniswapV2Router; //e uniswap router contract address
+    VaultGuardianToken private immutable i_vgToken; //e vault guardian contract address
 
-    uint256 private constant GUARDIAN_FEE = 0.1 ether;
+    uint256 private constant GUARDIAN_FEE = 0.1 ether; //e Guardian fee to become guardian
 
     // DAO updatable values
-    uint256 internal s_guardianStakePrice = 10 ether;
-    uint256 internal s_guardianAndDaoCut = 1000;
+    uint256 internal s_guardianStakePrice = 10 ether; //e guardian stake price
+    uint256 internal s_guardianAndDaoCut = 1000; //e 10% fee from daocut
 
-    // The guardian's address mapped to the asset, mapped to the allocation data
+    //e The guardian's address mapped to the asset, mapped to the allocation data
     mapping(address guardianAddress => mapping(IERC20 asset => IVaultShares vaultShares)) private s_guardians;
+
+    //e to check if the token is approved or not
     mapping(address token => bool approved) private s_isApprovedToken;
 
     /*//////////////////////////////////////////////////////////////
@@ -84,7 +86,7 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
-    modifier onlyGuardian(IERC20 token) {
+    modifier onlyGuardian(IERC20 token) { 
         if (address(s_guardians[msg.sender][token]) == address(0)) {
             revert VaultGuardiansBase__NotAGuardian(msg.sender, token);
         }
@@ -204,7 +206,7 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
     /*
      * See VaultGuardiansBase::quitGuardian()
      * The only difference here, is that this function is for non-WETH vaults
-     */
+    */
     function quitGuardian(IERC20 token) external onlyGuardian(token) returns (uint256) {
         if (token == i_weth) {
             revert VaultGuardiansBase__CantQuitWethWithThisFunction();

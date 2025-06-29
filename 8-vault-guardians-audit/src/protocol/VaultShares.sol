@@ -22,7 +22,7 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
     IERC20 internal immutable i_aaveAToken; //e returns aToken in return of underlying token example : ram invested 10 Usdc he gest 10 aUsdc that increase overtime as more intrest earned.
     address private immutable i_guardian; //e The owner of the protocol
     address private immutable i_vaultGuardians; //e guardian of the vault
-    uint256 private immutable i_guardianAndDaoCut; //e dao cut when depositing
+    uint256 private immutable i_guardianAndDaoCut; //e dao cut 10% from profit
     bool private s_isActive; //e may be to resolve re-entrancy
 
     AllocationData private s_allocationData;
@@ -205,7 +205,7 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
     {
         uint256 shares = super.withdraw(assets, receiver, owner);
         return shares;
-    } //e withdraw the funds by burning the share and get underlying tokens
+    } //e withdraw the funds by specifying the token you need. this burns the share and get underlying tokens.
 
     /**
      * @dev See {IERC4626-redeem}.
@@ -222,7 +222,8 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
     {
         uint256 assets = super.redeem(shares, receiver, owner);
         return assets;
-    }
+    } // redeem the underlying tokens by specifying shares you wanna burn and then get underyling token for that.
+
     // slither-disable-end reentrancy-eth
     // slither-disable-end reentrancy-benign
 
