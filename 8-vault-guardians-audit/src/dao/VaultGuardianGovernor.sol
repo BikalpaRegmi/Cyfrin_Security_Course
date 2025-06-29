@@ -22,6 +22,8 @@ contract VaultGuardianGovernor is Governor, GovernorCountingSimple, GovernorVote
         return 7 days;
     }
 
+    //@audit-MEDIUM Missing clockModes and clock overrides !!!.
+
     // The following functions are overrides required by Solidity.
 
     function quorum(uint256 blockNumber)

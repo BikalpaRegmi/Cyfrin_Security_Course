@@ -9,15 +9,17 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract VaultGuardianToken is ERC20, ERC20Permit, ERC20Votes, Ownable {
     constructor() ERC20("VaultGuardianToken", "VGT") ERC20Permit("VaultGuardianToken") Ownable(msg.sender) {}
 
-    // The following functions are overrides required by Solidity.
+    // The following functions are overrides required by Solidity.This function is to resolve muliple inheritance conflicts.
     function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
         super._update(from, to, value);
     }
 
+    //This function is to resolve muliple inheritance conflicts.
     function nonces(address ownerOfNonce) public view override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(ownerOfNonce);
     }
 
+//e This contract mints the DAO tokens to the vault guardians i.e stake tokens.
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }

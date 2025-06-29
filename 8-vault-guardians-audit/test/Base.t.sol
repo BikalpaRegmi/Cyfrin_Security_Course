@@ -12,6 +12,7 @@ import {IVaultData} from "../src/interfaces/IVaultData.sol";
 import {UniswapRouterMock} from "./mocks/UniswapRouterMock.sol";
 import {UniswapFactoryMock} from "./mocks/UniswapFactoryMock.sol";
 import {AavePoolMock} from "./mocks/AavePoolMock.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol" ;
 
 // Inspired by https://github.com/sablier-labs/v2-core
 abstract contract Base_Test is Test, IVaultData {
@@ -79,4 +80,5 @@ abstract contract Base_Test is Test, IVaultData {
 
     // add this to be excluded from coverage report
     function test() public {}
+
 }

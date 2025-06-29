@@ -91,6 +91,7 @@ contract VaultGuardians is Ownable, VaultGuardiansBase {
      * @param asset The ERC20 to sweep
      */
     function sweepErc20s(IERC20 asset) external {
+        //@followUp ETH transferred without address checks
         uint256 amount = asset.balanceOf(address(this));
         emit VaultGuardians__SweptTokens(address(asset));
         asset.safeTransfer(owner(), amount);

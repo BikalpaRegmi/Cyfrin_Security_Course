@@ -6,6 +6,8 @@ import {IVaultData} from "./IVaultData.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IVaultShares is IERC4626, IVaultData {
+
+    // e this maybe is the vault that user choose to invest by choosing the guardian.
     struct ConstructorData {
         IERC20 asset;
         string vaultName;
@@ -19,6 +21,7 @@ interface IVaultShares is IERC4626, IVaultData {
         address weth;
         address usdc;
     }
+
 
     function updateHoldingAllocation(AllocationData memory tokenAllocationData) external;
 

@@ -51,6 +51,8 @@ contract UniswapAdapter is AStaticUSDCData {
         if (!succ) {
             revert UniswapAdapter__TransferFailed();
         }
+
+        //@audit-high No slippage protection !
         uint256[] memory amounts = i_uniswapRouter.swapExactTokensForTokens({
             amountIn: amountOfTokenToSwap,
             amountOutMin: 0,
@@ -63,7 +65,7 @@ contract UniswapAdapter is AStaticUSDCData {
         if (!succ) {
             revert UniswapAdapter__TransferFailed();
         }
-        succ = token.approve(address(i_uniswapRouter), amountOfTokenToSwap + amounts[0]);
+        succ = token.approve(address(i_uniswapRouter), amountOfTokenToSwap + amounts[0]); 
         if (!succ) {
             revert UniswapAdapter__TransferFailed();
         }
@@ -72,7 +74,7 @@ contract UniswapAdapter is AStaticUSDCData {
         (uint256 tokenAmount, uint256 counterPartyTokenAmount, uint256 liquidity) = i_uniswapRouter.addLiquidity({
             tokenA: address(token),
             tokenB: address(counterPartyToken),
-            amountADesired: amountOfTokenToSwap + amounts[0],
+            amountADesired: amountOfTokenToSwap + amounts[0], 
             amountBDesired: amounts[1],
             amountAMin: 0,
             amountBMin: 0,
