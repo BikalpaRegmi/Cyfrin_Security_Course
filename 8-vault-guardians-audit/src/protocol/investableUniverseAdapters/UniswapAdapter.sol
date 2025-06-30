@@ -52,7 +52,7 @@ contract UniswapAdapter is AStaticUSDCData {
             revert UniswapAdapter__TransferFailed();
         }
 
-        //@audit-high No slippage protection !
+        //report-written No slippage protection !
         uint256[] memory amounts = i_uniswapRouter.swapExactTokensForTokens({
             amountIn: amountOfTokenToSwap,
             amountOutMin: 0,

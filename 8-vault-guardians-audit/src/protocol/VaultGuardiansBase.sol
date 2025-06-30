@@ -43,12 +43,12 @@ import {VaultGuardianToken} from "../dao/VaultGuardianToken.sol"; //e erc20 vgt 
 contract VaultGuardiansBase is AStaticTokenData, IVaultData {
     using SafeERC20 for IERC20;
 
-    error VaultGuardiansBase__NotEnoughWeth(uint256 amount, uint256 amountNeeded);
+    error VaultGuardiansBase__NotEnoughWeth(uint256 amount, uint256 amountNeeded); //report-written this isn't used
     error VaultGuardiansBase__NotAGuardian(address guardianAddress, IERC20 token);
-    error VaultGuardiansBase__CantQuitGuardianWithNonWethVaults(address guardianAddress);
+    error VaultGuardiansBase__CantQuitGuardianWithNonWethVaults(address guardianAddress); //report-written this isn't used
     error VaultGuardiansBase__CantQuitWethWithThisFunction();
     error VaultGuardiansBase__TransferFailed();
-    error VaultGuardiansBase__FeeTooSmall(uint256 fee, uint256 requiredFee);
+    error VaultGuardiansBase__FeeTooSmall(uint256 fee, uint256 requiredFee); //report-written isn't used anywhere
     error VaultGuardiansBase__NotApprovedToken(address token);
 
     /*//////////////////////////////////////////////////////////////
@@ -60,8 +60,9 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
     //////////////////////////////////////////////////////////////*/
     address private immutable i_aavePool; //e aave pool contract address
     address private immutable i_uniswapV2Router; //e uniswap router contract address
-    VaultGuardianToken private immutable i_vgToken; //e vault guardian contract address
+    VaultGuardianToken private immutable i_vgToken; //e erc vault guardian contract address
 
+//report-written unused variable
     uint256 private constant GUARDIAN_FEE = 0.1 ether; //e Guardian fee to become guardian
 
     // DAO updatable values
@@ -139,6 +140,7 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
         }));
         return _becomeTokenGuardian(i_weth, wethVault);
     }
+    
 
     /**
      * @notice Allows anyone to become a vault guardian for any one of the other supported tokens (USDC, LINK)
@@ -172,6 +174,7 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
             tokenVault =
             new VaultShares(IVaultShares.ConstructorData({
                 asset: token,
+                //report-written incorrect name and symbol
                 vaultName: TOKEN_ONE_VAULT_NAME,
                 vaultSymbol: TOKEN_ONE_VAULT_SYMBOL,
                 guardian: msg.sender,
@@ -239,6 +242,8 @@ contract VaultGuardiansBase is AStaticTokenData, IVaultData {
                            PRIVATE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function _quitGuardian(IERC20 token) private returns (uint256) {
+//report-written missing burning of vg tokens leading to infinite vg tokens minting.
+
         IVaultShares tokenVault = IVaultShares(s_guardians[msg.sender][token]);
         s_guardians[msg.sender][token] = IVaultShares(address(0));
         emit GaurdianRemoved(msg.sender, token);

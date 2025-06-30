@@ -18,6 +18,7 @@
     - [Test Coverage](#test-coverage)
 - [Misc](#misc)
 - [Audit Scope Details](#audit-scope-details)
+- [Known issues](#known-issues)
 
 ## About
 

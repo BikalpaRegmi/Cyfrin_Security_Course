@@ -102,7 +102,7 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
         s_isActive = true; //e is Active vault or not
         updateHoldingAllocation(constructorData.allocationData); //e holding allocation modify
 
-      //@FollowUp Reentrancy
+     
         // External calls
         i_aaveAToken =
             IERC20(IPool(constructorData.aavePool).getReserveData(address(constructorData.asset)).aTokenAddress); // Gives the address of asset token contract
@@ -113,7 +113,7 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
      * @notice Sets the vault as not active, which means that the vault guardian has quit
      * @notice Users will not be able to invest in this vault, however, they will be able to withdraw their deposited assets
      */
-
+//report-written make it external
     function setNotActive() public onlyVaultGuardians isActive {
         s_isActive = false;
         emit NoLongerActive();
@@ -172,7 +172,6 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
      */
     function _investFunds(uint256 assets) private {
         
-        //@audit-info slight precision loss by truncate
         uint256 uniswapAllocation = (assets * s_allocationData.uniswapAllocation) / ALLOCATION_PRECISION; 
         uint256 aaveAllocation = (assets * s_allocationData.aaveAllocation) / ALLOCATION_PRECISION;
 
@@ -188,6 +187,7 @@ contract VaultShares is ERC4626, IVaultShares, AaveAdapter, UniswapAdapter, Reen
      * @notice Anyone can call this and pay the gas costs to rebalance the portfolio at any time. 
      * @dev We understand that this is horrible for gas costs. 
      */
+    //report-written make it external
     function rebalanceFunds() public isActive divestThenInvest nonReentrant {} //e to be called after updateHoldingAllocation()
 
     /**

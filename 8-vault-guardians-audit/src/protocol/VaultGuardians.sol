@@ -40,7 +40,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract VaultGuardians is Ownable, VaultGuardiansBase {
     using SafeERC20 for IERC20;
 
-    error VaultGuardians__TransferFailed();
+    error VaultGuardians__TransferFailed(); //report-written this isn't used anywwhere
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -68,6 +68,8 @@ contract VaultGuardians is Ownable, VaultGuardiansBase {
      * @notice Updates the stake price for guardians. 
      * @param newStakePrice The new stake price in wei
      */
+
+
     function updateGuardianStakePrice(uint256 newStakePrice) external onlyOwner {
         s_guardianStakePrice = newStakePrice;
         emit VaultGuardians__UpdatedStakePrice(s_guardianStakePrice, newStakePrice);

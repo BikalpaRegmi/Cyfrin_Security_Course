@@ -22,7 +22,7 @@ contract VaultGuardianGovernor is Governor, GovernorCountingSimple, GovernorVote
         return 7 days;
     }
 
-    //@audit-MEDIUM Missing clockModes and clock overrides !!!.
+    //report-written Missing clockModes and clock overrides !!!.
 
     // The following functions are overrides required by Solidity.
 
