@@ -1,3 +1,6 @@
 [submodule "Tincho_Fuzz_Practice_Excercise/lib/forge-std"]
 	path = Tincho_Fuzz_Practice_Excercise/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "9-Horse-Store/lib/forge-std"]
+	path = 9-Horse-Store/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
