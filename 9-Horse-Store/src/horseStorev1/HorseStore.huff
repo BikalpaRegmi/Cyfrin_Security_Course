@@ -27,4 +27,8 @@ readJump: Read_Number_Of_Horses()
 sstore // Store the value on 0th or any index that if free pointed by FREE_STORAGE_POINTER
 }
 
-#define macro Read_Number_Of_Horses() = takes(0) returns(0){}
+#define macro Read_Number_Of_Horses() = takes(0) returns(0){
+    [NUMBER_OF_HORSES_STORAGE_SLOT] sload
+    
+    
+}
