@@ -10,6 +10,12 @@ contract MockUSDC is ERC20 {
         tokenDecimals = _tokenDecimals;
     }
 
+    /*e
+    Decimals defines how many decimal places does token uses.
+    If decimal = 18, then : 1 Token = 1*10^18 or 1e19 (Just like ethers i.e 1 ether = 1e19 wei).
+    If decimals = 6, then : 1 Token = 1*10^6 or 1e7.
+     */
+
     function decimals() public view override returns (uint8) {
         return tokenDecimals;
     }

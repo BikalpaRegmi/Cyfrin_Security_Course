@@ -1,0 +1,12 @@
+OrderBook is a simple protocol that follows orderbook principle unlike AMM. This protocol deals with wbtc,weth and wsol. Sellers can list their token in desired usdc price 
+and anyone can buy it. Like Binance p2p.
+
+Flow -:
+i. Seller lock their wrapped token and list it on platform in desired price & deadline.
+ii. Buyers buy the token by paying usdc.
+iii. If the order isn't accepted by anyone before deadline, seller can cancel the order & retrive back thier tokens.
+
+The each order contain an unique orderId giving the seller full control over thier listings. And the protocol uses SafeErc20 for secure transfers.
+
+Users can cancel the active as well as expired orders. Users can ammend(Modify,edit) the active orders. Protocol also allows quick withdrawls for non-supported tokens like 
+(Link,Uni,Dai) etc. But supported tokens(wbtc,weth,wsol) are not withdrawalable. 

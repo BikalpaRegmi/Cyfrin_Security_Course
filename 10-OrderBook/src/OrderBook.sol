@@ -32,12 +32,12 @@ contract OrderBook is Ownable {
         uint256 priceInUSDC ; // Total USDC price for the entire amountToSell
         uint256 deadlineTimestamp ; // Block timestamp after which the order expires
         bool isActive ; // Flag indicating if the order is available to be bought
-    }
+    } 
 
     // --- Constants ---
     uint256 public constant MAX_DEADLINE_DURATION = 3 days ; // Max duration from now for a deadline
     uint256 public constant FEE = 3 ; // 3%
-    uint256 public constant PRECISION = 100 ;
+    uint256 public constant PRECISION = 100 ; //100%
 
     // --- State Variables ---
     IERC20 public immutable iWETH;
@@ -48,8 +48,9 @@ contract OrderBook is Ownable {
     mapping(address => bool) public allowedSellToken;
 
     mapping(uint256 => Order) public orders ; 
+
     uint256 private _nextOrderId;
-    uint256 public totalFees;
+    uint256 public totalFees; //?
 
     // --- Events ---
     event OrderCreated(
@@ -82,7 +83,7 @@ contract OrderBook is Ownable {
     error InvalidAddress();
 
     // --- Constructor ---
-    constructor(address _weth, address _wbtc, address _wsol, address _usdc, address _owner) Ownable(_owner) {
+    constructor(address _weth, address _wbtc, address _wsol, address _usdc, address _owner) Ownable(_owner) { //@audit-info local shadows another state variable.
         if (_weth == address(0) || _wbtc == address(0) || _wsol == address(0) || _usdc == address(0)) {
             revert InvalidToken();
         }
@@ -104,19 +105,30 @@ contract OrderBook is Ownable {
         _nextOrderId = 1; // Start order IDs from 1
     }
 
+/* struct Order {
+        uint256 id ;
+        address seller ;
+        address tokenToSell ; // Address of wETH, wBTC, or wSOL
+        uint256 amountToSell ; // Amount of tokenToSell
+        uint256 priceInUSDC ; // Total USDC price for the entire amountToSell
+        uint256 deadlineTimestamp ; // Block timestamp after which the order expires
+        bool isActive ; // Flag indicating if the order is available to be bought
+    } */
+
+//crystal clear
     function createSellOrder(
         address _tokenToSell,
         uint256 _amountToSell,
         uint256 _priceInUSDC,
         uint256 _deadlineDuration
-    ) public returns (uint256) {
+    ) public returns (uint256) { //@audit-gas Should be marked external.
         if (!allowedSellToken[_tokenToSell]) revert InvalidToken();
         if (_amountToSell == 0) revert InvalidAmount();
         if (_priceInUSDC == 0) revert InvalidPrice();
         if (_deadlineDuration == 0 || _deadlineDuration > MAX_DEADLINE_DURATION) revert InvalidDeadline();
 
         uint256 deadlineTimestamp = block.timestamp + _deadlineDuration;
-        uint256 orderId = _nextOrderId++;
+        uint256 orderId = _nextOrderId++ ; //Don't get confused, this is an post increment operator (x++) means it first assigns the value to orderId and then increases its value. It is safe.
 
         IERC20(_tokenToSell).safeTransferFrom(msg.sender, address(this), _amountToSell);
 
@@ -130,17 +142,18 @@ contract OrderBook is Ownable {
             deadlineTimestamp: deadlineTimestamp,
             isActive: true
         });
-
+ 
         emit OrderCreated(orderId, msg.sender, _tokenToSell, _amountToSell, _priceInUSDC, deadlineTimestamp);
         return orderId;
     }
 
+//crystal clear
     function amendSellOrder(
         uint256 _orderId,
         uint256 _newAmountToSell,
         uint256 _newPriceInUSDC,
         uint256 _newDeadlineDuration
-    ) public {
+    ) public { //@audit-gas Should be marked external.
         Order storage order = orders[_orderId];
 
         // Validation checks
@@ -170,11 +183,11 @@ contract OrderBook is Ownable {
         order.amountToSell = _newAmountToSell;
         order.priceInUSDC = _newPriceInUSDC;
         order.deadlineTimestamp = newDeadlineTimestamp;
-
         emit OrderAmended(_orderId, _newAmountToSell, _newPriceInUSDC, newDeadlineTimestamp);
     }
 
-    function cancelSellOrder(uint256 _orderId) public {
+//crystal clear
+    function cancelSellOrder(uint256 _orderId) public { //@audit-gas Should be marked external.
         Order storage order = orders[_orderId];
 
         // Validation checks
@@ -191,7 +204,8 @@ contract OrderBook is Ownable {
         emit OrderCancelled(_orderId, order.seller);
     }
 
-    function buyOrder(uint256 _orderId) public {
+//crystal clear
+    function buyOrder(uint256 _orderId) public { //@audit-gas Should be marked external.
         Order storage order = orders[_orderId];
 
         // Validation checks
@@ -200,11 +214,14 @@ contract OrderBook is Ownable {
         if (block.timestamp >= order.deadlineTimestamp) revert OrderExpired();
 
         order.isActive = false;
-        uint256 protocolFee = (order.priceInUSDC * FEE) / PRECISION;
-        uint256 sellerReceives = order.priceInUSDC - protocolFee;
+        uint256 protocolFee = (order.priceInUSDC * FEE) / PRECISION ; 
+        // Dont get confused of precision loss or truncation of decimal value because usdc is represented
+        // in decimal of 10^6 so the value will be transfered from openzeppelin like 999000 not like 9.9 or something on both eoa wallet and smart contract wallet too.
+        uint256 sellerReceives = order.priceInUSDC - protocolFee ;
 
         iUSDC.safeTransferFrom(msg.sender, address(this), protocolFee);
         iUSDC.safeTransferFrom(msg.sender, order.seller, sellerReceives);
+        
         IERC20(order.tokenToSell).safeTransfer(msg.sender, order.amountToSell);
 
         totalFees += protocolFee;
@@ -212,12 +229,15 @@ contract OrderBook is Ownable {
         emit OrderFilled(_orderId, msg.sender, order.seller);
     }
 
-    function getOrder(uint256 _orderId) public view returns (Order memory orderDetails) {
+//crystal clear
+    function getOrder(uint256 _orderId) public view returns (Order memory orderDetails) { //@audit-gas Should be marked external.
         if (orders[_orderId].seller == address(0)) revert OrderNotFound();
         orderDetails = orders[_orderId];
     }
 
-    function getOrderDetailsString(uint256 _orderId) public view returns (string memory details) {
+
+//crystal clear
+    function getOrderDetailsString(uint256 _orderId) public view returns (string memory details) { //@audit-gas Should be marked external.
         Order storage order = orders[_orderId];
         if (order.seller == address(0)) revert OrderNotFound(); // Check if order exists
 
@@ -233,6 +253,7 @@ contract OrderBook is Ownable {
         string memory status = order.isActive
             ? (block.timestamp < order.deadlineTimestamp ? "Active" : "Expired (Active but past deadline)")
             : "Inactive (Filled/Cancelled)";
+
         if (order.isActive && block.timestamp >= order.deadlineTimestamp) {
             status = "Expired (Awaiting Cancellation)";
         } else if (!order.isActive) {
@@ -268,13 +289,16 @@ contract OrderBook is Ownable {
         return details;
     }
 
+//crystal clear
     function setAllowedSellToken(address _token, bool _isAllowed) external onlyOwner {
         if (_token == address(0) || _token == address(iUSDC)) revert InvalidToken(); // Cannot allow null or USDC itself
+
         allowedSellToken[_token] = _isAllowed;
 
         emit TokenAllowed(_token, _isAllowed);
     }
 
+//crystal clear
     function emergencyWithdrawERC20(address _tokenAddress, uint256 _amount, address _to) external onlyOwner {
         if (
             _tokenAddress == address(iWETH) || _tokenAddress == address(iWBTC) || _tokenAddress == address(iWSOL)
@@ -291,6 +315,7 @@ contract OrderBook is Ownable {
         emit EmergencyWithdrawal(_tokenAddress, _amount, _to);
     }
 
+//crystal clear
     function withdrawFees(address _to) external onlyOwner {
         if (totalFees == 0) {
             revert InvalidAmount();

@@ -9,12 +9,12 @@ import {MockWETH} from "./mocks/MockWETH.sol";
 import {MockWSOL} from "./mocks/MockWSOL.sol";
 
 contract TestOrderBook is Test {
-    OrderBook book;
+    OrderBook book; //contract
 
-    MockUSDC usdc;
-    MockWBTC wbtc;
-    MockWETH weth;
-    MockWSOL wsol;
+    MockUSDC usdc; 
+    MockWBTC wbtc; 
+    MockWETH weth; 
+    MockWSOL wsol; 
 
     address owner;
     address alice;
@@ -29,6 +29,7 @@ contract TestOrderBook is Test {
         alice = makeAddr("will_sell_wbtc_order");
         bob = makeAddr("will_sell_weth_order");
         clara = makeAddr("will_sell_wsol_order");
+
         dan = makeAddr("will_buy_orders");
 
         usdc = new MockUSDC(6);
@@ -62,10 +63,13 @@ contract TestOrderBook is Test {
         wbtc.approve(address(book), 2e8);
         uint256 aliceId = book.createSellOrder(address(wbtc), 2e8, 180_000e6, 2 days);
         vm.stopPrank();
+        
 
         assert(aliceId == 1);
         assert(wbtc.balanceOf(alice) == 0);
         assert(wbtc.balanceOf(address(book)) == 2e8);
+        assert(book.getOrder(1).deadlineTimestamp == block.timestamp + 2 days) ;
+        assert(book.getOrder(1).seller == alice);
 
         // bob creates sell order for weth
         vm.startPrank(bob);

@@ -4,3 +4,9 @@
 [submodule "9-Horse-Store/lib/forge-std"]
 	path = 9-Horse-Store/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "10-OrderBook/lib/openzeppelin-contracts"]
+	path = 10-OrderBook/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "10-OrderBook/lib/forge-std"]
+	path = 10-OrderBook/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
