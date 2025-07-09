@@ -83,7 +83,7 @@ contract OrderBook is Ownable {
     error InvalidAddress();
 
     // --- Constructor ---
-    constructor(address _weth, address _wbtc, address _wsol, address _usdc, address _owner) Ownable(_owner) { //@audit-info local shadows another state variable.
+    constructor(address _weth, address _wbtc, address _wsol, address _usdc, address _owner) Ownable(_owner) { //report-written local shadows another state variable.
         if (_weth == address(0) || _wbtc == address(0) || _wsol == address(0) || _usdc == address(0)) {
             revert InvalidToken();
         }
@@ -318,16 +318,16 @@ contract OrderBook is Ownable {
 //crystal clear
     function withdrawFees(address _to) external onlyOwner {
         if (totalFees == 0) {
-            revert InvalidAmount();
+            revert InvalidAmount() ;
         }
         if (_to == address(0)) {
-            revert InvalidAddress();
+            revert InvalidAddress() ;
         }
 
-        iUSDC.safeTransfer(_to, totalFees);
+        iUSDC.safeTransfer(_to, totalFees) ;
 
-        totalFees = 0;
+        totalFees = 0 ;
 
-        emit FeesWithdrawn(_to);
+        emit FeesWithdrawn(_to) ;
     }
 }
