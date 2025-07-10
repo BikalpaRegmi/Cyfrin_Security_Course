@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.27;
+pragma solidity 0.8.20;
 
 import {Base_Testv1 , HorseStore} from "./BaseTest_v1.t.sol" ; 
 import {HuffDeployer} from "foundry-huff/HuffDeployer.sol" ;
