@@ -1,7 +1,7 @@
 
 // INTERFACES
-#define function updateHorseNumber(uint256) nonpayable returns()  
-#define function getHorseNumber() view returns(uint256)
+#define function updateHorseNumber(uint256) nonpayable returns()  //0x9764dede
+#define function getHorseNumber() view returns(uint256) //0xb364ca2a
 
 #define constant NUMBER_OF_HORSES_STORAGE_SLOT = FREE_STORAGE_POINTER()
 #define macro MAIN() = takes(0) returns(0) {

@@ -13,3 +13,9 @@
 [submodule "9-Horse-Store/lib/foundry-huff"]
 	path = 9-Horse-Store/lib/foundry-huff
 	url = https://github.com/huff-language/foundry-huff
+[submodule "9-Horse-Store/lib/openzeppelin-contracts"]
+	path = 9-Horse-Store/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "9-Horse-Store/lib/huffmate"]
+	path = 9-Horse-Store/lib/huffmate
+	url = https://github.com/huff-language/huffmate

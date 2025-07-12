@@ -41,56 +41,67 @@ PUSH2 0x0171 // [0x0171]
 DUP1   // [0x0171 , 0x0171]
 PUSH2 0x001d // [0x001d , 0x0171 , 0x0171]
 PUSH0       // [0x00, 0x001d , 0x0171 , 0x0171]
-CODECOPY    //2b included in notes 
-PUSH0
-RETURN
+CODECOPY    //2b included in notes // copies runtime code onto the chain
+PUSH0 // [0x00,0x00, 0x001d , 0x0171 , 0x0171]
+RETURN 
 INVALID
 
-PUSH1 0x80
-PUSH1 0x40
-MSTORE
-CALLVALUE
-DUP1
-ISZERO
-PUSH2 0x000f
-JUMPI
+PUSH1 0x80 //[0x80]
+PUSH1 0x40 //[0x40, 0x80]
+MSTORE //memory[0x40] = 0x80
+
+CALLVALUE // [msg.value]
+DUP1 // [msg.value,msg.value]
+ISZERO // [msg.value==0 , msg.value]
+PUSH2 0x000f //[0x00f , msg.value==0 , msg.value]
+JUMPI // [msg.value]
 PUSH0
 DUP1
 REVERT
-JUMPDEST
-POP
-PUSH1 0x04
-CALLDATASIZE
-LT
-PUSH2 0x003f
+
+JUMPDEST //[msg.value]
+POP //[]
+PUSH1 0x04 //[0x04]
+CALLDATASIZE //[size , 0x04]
+LT // [size<0x04] // checks if parameters is sent empty
+
+ // This is done to check because this contrct doesn't have any fallback function so if sent any data then reverts. It means there is no any 0x04 is the size of a function selector so if the calldata size is less than function selector then jumpi & revert.
+
+PUSH2 0x003f // [0x003f ,size<0x04]
 JUMPI
-PUSH0
-CALLDATALOAD
-PUSH1 0xe0
-SHR
-DUP1
-PUSH4 0x13c2e772
-EQ
-PUSH2 0x0043
-JUMPI
-DUP1
-PUSH4 0xb364ca2a
-EQ
-PUSH2 0x0061
-JUMPI
-DUP1
-PUSH4 0xcdfead2e
+
+PUSH0 //[0]
+CALLDATALOAD //[calldata]
+PUSH1 0xe0 // [0xe0, calldata]
+SHR // [function_selector]
+DUP1 //[function_selector , function_selector]
+PUSH4 0x13c2e772 //[update_horse_num , function_selector, function_selector]
+EQ //[update_horse_num==function_selector, function_selector]
+PUSH2 0x0043 //[0x0043 , update_horse_num==function_selector, function_selector]
+JUMPI 
+
+DUP1 //[function_selector,function_selector]
+PUSH4 0xb364ca2a // [read_num_of_horses , function_selector,function_selector]
+EQ 
+PUSH2 0x0061 // [read_numOf_horses==function_selector , function_selector]
+JUMPI //[function_selector]
+
+DUP1 //[function_selector,function_selector]
+PUSH4 0xcdfead2e //
 EQ
 PUSH2 0x007f
 JUMPI
-JUMPDEST
+
+JUMPDEST // reverts if the calldata size doesn't matches 0x04(function selector size)
 PUSH0
 DUP1
 REVERT
-JUMPDEST
-PUSH2 0x004b
-PUSH2 0x009b
+
+JUMPDEST //[function_selector]
+PUSH2 0x004b //[0x004b, function_selector]
+PUSH2 0x009b  //[0x009b, 0x004b, function_selector]
 JUMP
+
 JUMPDEST
 PUSH1 0x40
 MLOAD
