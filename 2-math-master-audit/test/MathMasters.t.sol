@@ -25,6 +25,19 @@ contract MathMastersTest is Base_Test {
         assertEq(MathMasters.mulWadUp(369, 271), 1);
     }
 
+    function testMulWadUpUnit() external {
+        uint256 x = 0x3b9aca00 ;
+        uint256 y = 0x3b9aca00 ;
+
+        uint256 result = MathMasters.mulWadUp(x,y);
+        uint256 resultDown = MathMasters.mulWad(x,y);
+        
+console2.log(result) ; 
+console2.log(resultDown);
+
+assert(result == resultDown) ;
+    }
+
     function testMulWadUpFuzz(uint256 x, uint256 y) public {
         // We want to skip the case where x * y would overflow.
         // Since Solidity 0.8.0 checks for overflows by default,
@@ -57,5 +70,13 @@ contract MathMastersTest is Base_Test {
 
     function testSqrtFuzzSolmate(uint256 x) public pure {
         assert(MathMasters.sqrt(x) == solmateSqrt(x));
+    }
+
+    function check_testmulwadupFuzz_halmos(uint x , uint y) external pure {
+        if (x == 0 || y == 0 || y <= type(uint256).max / x) {
+            uint256 result = MathMasters.mulWadUp(x, y);
+            uint256 expected = x * y == 0 ? 0 : (x * y - 1) / 1e18 + 1;
+            assert(result == expected);
+        }
     }
 }
